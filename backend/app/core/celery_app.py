@@ -13,3 +13,10 @@ celery_app.conf.task_routes = {
     "worker.tasks.scraping.*": {"queue": "scraping"},
     "worker.tasks.notifications.*": {"queue": "notifications"},
 }
+
+celery_app.conf.beat_schedule = {
+    "scrape-all-active-offers": {
+        "task": "worker.tasks.scraping.scrape_all_active_offers",
+        "schedule": settings.SCRAPE_INTERVAL_MINUTES * 60,
+    },
+}
