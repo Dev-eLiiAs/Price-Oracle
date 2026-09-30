@@ -59,6 +59,19 @@ export function getHistory(id: string): Promise<PricePoint[]> {
   return request(`/api/v1/products/${id}/history`);
 }
 
+export interface Recommendation {
+  verdict: "buy_now" | "good_time" | "wait" | "neutral" | "insufficient_data";
+  message: string;
+  current_price: string | null;
+  historical_min: string | null;
+  moving_average_30d: string | null;
+  percentile_rank: number | null;
+}
+
+export function getRecommendation(id: string): Promise<Recommendation> {
+  return request(`/api/v1/products/${id}/recommendation`);
+}
+
 export function createProductFromUrl(url: string, productId?: string): Promise<Product> {
   return request("/api/v1/products/from-url", {
     method: "POST",

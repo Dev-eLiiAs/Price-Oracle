@@ -335,6 +335,63 @@ section h2 {
   padding: 1.25rem;
 }
 
+/* Recommendation badge */
+
+.recommendation-badge {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2rem;
+  border: 1px solid transparent;
+}
+
+.recommendation-badge__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recommendation-badge__message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.recommendation-badge--buy {
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
+}
+.recommendation-badge--buy .recommendation-badge__label {
+  color: var(--success);
+}
+
+.recommendation-badge--good {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.recommendation-badge--good .recommendation-badge__label {
+  color: var(--accent);
+}
+
+.recommendation-badge--wait {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+.recommendation-badge--wait .recommendation-badge__label {
+  color: var(--danger);
+}
+
+.recommendation-badge--neutral {
+  background: var(--bg);
+  border-color: var(--border);
+}
+.recommendation-badge--neutral .recommendation-badge__label {
+  color: var(--text-muted);
+}
+
 /* Offers list */
 
 .offers-list {

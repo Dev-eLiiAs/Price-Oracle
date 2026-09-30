@@ -13,7 +13,9 @@ from app.schemas.products import (
     ProductFromUrl,
     ProductRead,
     ProductUpdate,
+    RecommendationRead,
 )
+from app.services import advisor as advisor_service
 from app.services import products as products_service
 from app.services import scraping as scraping_service
 from worker.scraping.exceptions import ScrapingError
@@ -111,3 +113,11 @@ async def add_price_point(
 async def get_history(product_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     product = await _get_product_or_404(db, product_id)
     return await products_service.get_history(db, product)
+
+
+@router.get("/{product_id}/recommendation", response_model=RecommendationRead)
+async def get_recommendation(product_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    product = await _get_product_or_404(db, product_id)
+    history = await products_service.get_history(db, product)
+    current_price, _ = await products_service.get_best_price(db, product)
+    return advisor_service.compute_recommendation(history, current_price)

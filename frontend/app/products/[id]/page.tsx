@@ -5,7 +5,16 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import AddOfferForm from "@/components/AddOfferForm";
 import PriceChart from "@/components/PriceChart";
-import { deleteProduct, getHistory, getProduct, type PricePoint, type Product } from "@/lib/api";
+import RecommendationBadge from "@/components/RecommendationBadge";
+import {
+  deleteProduct,
+  getHistory,
+  getProduct,
+  getRecommendation,
+  type PricePoint,
+  type Product,
+  type Recommendation,
+} from "@/lib/api";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
@@ -13,6 +22,7 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [history, setHistory] = useState<PricePoint[]>([]);
+  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,12 +30,14 @@ export default function ProductDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [productData, historyData] = await Promise.all([
+      const [productData, historyData, recommendationData] = await Promise.all([
         getProduct(productId),
         getHistory(productId),
+        getRecommendation(productId),
       ]);
       setProduct(productData);
       setHistory(historyData);
+      setRecommendation(recommendationData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error cargando el producto");
     } finally {
@@ -69,6 +81,8 @@ export default function ProductDetailPage() {
           Sin precio disponible.
         </p>
       )}
+
+      {recommendation && <RecommendationBadge recommendation={recommendation} />}
 
       <section>
         <h2>Histórico de precios</h2>

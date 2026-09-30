@@ -64,6 +64,15 @@ class PricePointCreate(BaseModel):
     currency: str = "EUR"
 
 
+class RecommendationRead(BaseModel):
+    verdict: str
+    message: str
+    current_price: Decimal | None
+    historical_min: Decimal | None
+    moving_average_30d: Decimal | None
+    percentile_rank: float | None
+
+
 class PricePointRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
