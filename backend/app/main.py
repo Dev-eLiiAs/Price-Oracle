@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1 import health, products
 from app.core.config import settings
 
 app = FastAPI(title="Price Oracle API")
@@ -13,7 +14,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/health")
-def health() -> dict:
-    return {"status": "ok"}
+app.include_router(health.router)
+app.include_router(products.router, prefix="/api/v1")

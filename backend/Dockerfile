@@ -7,6 +7,10 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir "./backend[dev]"
 
 COPY backend/app ./app
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/alembic ./alembic
+COPY backend/tests ./tests
+COPY backend/pytest.ini ./pytest.ini
 COPY worker ./worker
 
 ENV PYTHONPATH=/app

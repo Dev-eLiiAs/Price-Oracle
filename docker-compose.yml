@@ -41,6 +41,10 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini
+      - ./backend/tests:/app/tests
+      - ./backend/pytest.ini:/app/pytest.ini
       - ./worker:/app/worker
     depends_on:
       postgres:
