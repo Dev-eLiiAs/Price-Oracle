@@ -10,10 +10,13 @@ from app.schemas.products import (
     PricePointCreate,
     PricePointRead,
     ProductCreate,
+    ProductFromUrl,
     ProductRead,
     ProductUpdate,
 )
 from app.services import products as products_service
+from app.services import scraping as scraping_service
+from worker.scraping.exceptions import ScrapingError
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -64,6 +67,17 @@ async def update_product(
 async def delete_product(product_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     product = await _get_product_or_404(db, product_id)
     await products_service.delete_product(db, product)
+
+
+@router.post("/from-url", response_model=ProductRead, status_code=201)
+async def create_from_url(data: ProductFromUrl, db: AsyncSession = Depends(get_db)):
+    try:
+        product = await scraping_service.ingest_from_url(db, data.url, data.product_id)
+    except ScrapingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return await _to_product_read(db, product)
 
 
 @router.post("/{product_id}/offers", response_model=OfferRead, status_code=201)

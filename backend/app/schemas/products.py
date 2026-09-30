@@ -54,6 +54,11 @@ class ProductRead(BaseModel):
     best_price_retailer: str | None = None
 
 
+class ProductFromUrl(BaseModel):
+    url: str
+    product_id: uuid.UUID | None = None
+
+
 class PricePointCreate(BaseModel):
     price: Decimal
     currency: str = "EUR"
