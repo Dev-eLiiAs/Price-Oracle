@@ -35,6 +35,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://price_oracle:price_oracle@localhost:5432/price_oracle
       REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
 
