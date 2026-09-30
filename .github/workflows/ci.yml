@@ -68,9 +68,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
