@@ -37,6 +37,10 @@ async def _scrape_offer(offer_id: str) -> None:
 
         await db.commit()
 
+        from worker.tasks.notifications import evaluate_and_notify
+
+        evaluate_and_notify.delay(str(offer.product_id))
+
 
 async def _record_scrape_failure(offer_id: str) -> None:
     async with async_session_factory() as db:

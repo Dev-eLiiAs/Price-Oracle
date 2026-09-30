@@ -10,5 +10,13 @@ class Settings(BaseSettings):
     DEFAULT_USER_ID: str = "00000000-0000-0000-0000-000000000001"
     SCRAPE_INTERVAL_MINUTES: int = 45
 
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+
+    TELEGRAM_BOT_TOKEN: str = ""
+
 
 settings = Settings()

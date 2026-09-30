@@ -22,13 +22,13 @@ class NotificationLog(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
     alert_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("alerts.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("alerts.id", ondelete="SET NULL"), nullable=True
     )
     product_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("products.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True
     )
     offer_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("product_offers.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("product_offers.id", ondelete="SET NULL"), nullable=True
     )
     channel: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False)
