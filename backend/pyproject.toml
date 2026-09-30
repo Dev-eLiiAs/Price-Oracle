@@ -21,8 +21,8 @@ dev = [
     "pytest-asyncio>=0.24",
 ]
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [build-system]
 requires = ["setuptools>=68"]
