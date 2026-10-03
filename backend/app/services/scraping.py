@@ -1,4 +1,5 @@
 import uuid
+from urllib.parse import urlparse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,18 +7,31 @@ from app.models.products import Product
 from app.schemas.products import OfferCreate, ProductCreate
 from app.services import products as products_service
 from worker.scraping.engine import PlaywrightScraper
+from worker.scraping.exceptions import DuplicateOfferError
 from worker.scraping.strategies import detect_strategy
 
 
 async def ingest_from_url(
     db: AsyncSession, url: str, product_id: uuid.UUID | None
 ) -> Product:
+    existing_offer = await products_service.find_offer_by_url(db, url)
+    if existing_offer is not None:
+        raise DuplicateOfferError(
+            f"Ya tienes este producto guardado: "
+            f"{existing_offer.product.canonical_name or 'producto sin nombre'}.",
+            product_id=str(existing_offer.product_id),
+        )
+
     strategy = detect_strategy(url)
     scraped = await PlaywrightScraper().scrape(url, strategy)
 
+    retailer = strategy.name
+    if strategy.name == "generic":
+        retailer = urlparse(url).netloc.lower().removeprefix("www.") or "generic"
+
     offer_data = OfferCreate(
         url=url,
-        retailer=strategy.name,
+        retailer=retailer,
         scraper_strategy=strategy.name,
         price=scraped.price,
         scraped_name=scraped.name,

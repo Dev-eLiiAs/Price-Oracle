@@ -115,6 +115,34 @@ async def add_offer(db: AsyncSession, product: Product, data: OfferCreate) -> Pr
     return offer
 
 
+async def get_latest_prices(db: AsyncSession, product: Product) -> dict[uuid.UUID, Decimal]:
+    """Latest known price per offer, regardless of status — lets the UI compare all offers."""
+    prices: dict[uuid.UUID, Decimal] = {}
+    for offer in product.offers:
+        stmt = (
+            select(PriceHistory)
+            .where(PriceHistory.offer_id == offer.id)
+            .order_by(PriceHistory.scraped_at.desc())
+            .limit(1)
+        )
+        result = await db.execute(stmt)
+        latest = result.scalar_one_or_none()
+        if latest is not None:
+            prices[offer.id] = latest.price
+    return prices
+
+
+async def find_offer_by_url(db: AsyncSession, url: str) -> ProductOffer | None:
+    stmt = (
+        select(ProductOffer)
+        .join(Product)
+        .where(Product.user_id == DEFAULT_USER_ID, ProductOffer.url == url)
+        .options(selectinload(ProductOffer.product))
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def get_offer(db: AsyncSession, product: Product, offer_id: uuid.UUID) -> ProductOffer | None:
     stmt = select(ProductOffer).where(
         ProductOffer.id == offer_id, ProductOffer.product_id == product.id

@@ -1,3 +1,4 @@
+import json
 import random
 import re
 from dataclasses import dataclass
@@ -63,13 +64,37 @@ class PlaywrightScraper:
                 if any(marker in content_lower for marker in BLOCKED_MARKERS):
                     raise ScrapingBlockedError(f"Blocked while scraping {url}")
 
-                await page.wait_for_selector(strategy.wait_for_selector, timeout=self.timeout_ms)
+                await page.wait_for_selector(
+                    strategy.wait_for_selector,
+                    timeout=self.timeout_ms,
+                    state=strategy.wait_for_state,
+                )
 
-                name = await self._text_or_none(page, strategy.name_selector)
+                name = (
+                    await self._attr_or_none(page, strategy.name_selector, strategy.name_attr)
+                    if strategy.name_attr
+                    else await self._text_or_none(page, strategy.name_selector)
+                )
                 image_url = await self._attr_or_none(
                     page, strategy.image_selector, strategy.image_attr
                 )
-                price_text = await self._text_or_none(page, strategy.price_selector)
+                price_text = (
+                    await self._attr_or_none(page, strategy.price_selector, strategy.price_attr)
+                    if strategy.price_attr
+                    else await self._text_or_none(page, strategy.price_selector)
+                )
+
+                if price_text is None or name is None or image_url is None:
+                    ld_product = await self._extract_json_ld_product(page)
+                    if ld_product:
+                        if price_text is None:
+                            price_text = self._json_ld_price(ld_product)
+                        if name is None:
+                            ld_name = ld_product.get("name")
+                            name = ld_name if isinstance(ld_name, str) else None
+                        if image_url is None:
+                            image_url = self._json_ld_image(ld_product)
+
                 if price_text is None:
                     raise ScrapingTimeoutError(f"Price selector not found for {url}")
                 price = self._parse_price(price_text, strategy.price_regex)
@@ -97,6 +122,55 @@ class PlaywrightScraper:
         if await locator.count() == 0:
             return None
         return await locator.get_attribute(attribute)
+
+    @staticmethod
+    async def _extract_json_ld_product(page) -> dict | None:
+        """Look for a schema.org Product block in <script type="application/ld+json">.
+
+        Increasingly the only structured-data format sites bother to emit
+        (Google's own recommendation), so it's a stronger fallback than
+        Open Graph meta tags alone for the generic strategy.
+        """
+        scripts = await page.locator('script[type="application/ld+json"]').all_text_contents()
+        for raw in scripts:
+            try:
+                data = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                continue
+            for item in data if isinstance(data, list) else [data]:
+                if not isinstance(item, dict):
+                    continue
+                graph = item.get("@graph")
+                nodes = graph if isinstance(graph, list) else [item]
+                for node in nodes:
+                    if not isinstance(node, dict):
+                        continue
+                    node_types = node.get("@type")
+                    node_types = node_types if isinstance(node_types, list) else [node_types]
+                    if "Product" in node_types:
+                        return node
+        return None
+
+    @staticmethod
+    def _json_ld_price(product: dict) -> str | None:
+        offers = product.get("offers")
+        offer = offers[0] if isinstance(offers, list) and offers else offers
+        if not isinstance(offer, dict):
+            return None
+        price = offer.get("price")
+        return str(price) if price is not None else None
+
+    @staticmethod
+    def _json_ld_image(product: dict) -> str | None:
+        image = product.get("image")
+        if isinstance(image, str):
+            return image
+        if isinstance(image, list) and image and isinstance(image[0], str):
+            return image[0]
+        if isinstance(image, dict):
+            url = image.get("url")
+            return url if isinstance(url, str) else None
+        return None
 
     @staticmethod
     def _parse_price(text: str, price_regex: str) -> Decimal:

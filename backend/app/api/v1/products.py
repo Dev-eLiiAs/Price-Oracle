@@ -18,16 +18,19 @@ from app.schemas.products import (
 from app.services import advisor as advisor_service
 from app.services import products as products_service
 from app.services import scraping as scraping_service
-from worker.scraping.exceptions import ScrapingError
+from worker.scraping.exceptions import DuplicateOfferError, ScrapingError
 
 router = APIRouter(prefix="/products", tags=["products"])
 
 
 async def _to_product_read(db: AsyncSession, product) -> ProductRead:
     best_price, best_retailer = await products_service.get_best_price(db, product)
+    latest_prices = await products_service.get_latest_prices(db, product)
     read = ProductRead.model_validate(product)
     read.best_price = best_price
     read.best_price_retailer = best_retailer
+    for offer_read in read.offers:
+        offer_read.latest_price = latest_prices.get(offer_read.id)
     return read
 
 
@@ -75,6 +78,11 @@ async def delete_product(product_id: uuid.UUID, db: AsyncSession = Depends(get_d
 async def create_from_url(data: ProductFromUrl, db: AsyncSession = Depends(get_db)):
     try:
         product = await scraping_service.ingest_from_url(db, data.url, data.product_id)
+    except DuplicateOfferError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": str(exc), "product_id": exc.product_id},
+        ) from exc
     except ScrapingError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:

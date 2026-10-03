@@ -28,6 +28,7 @@ class OfferRead(BaseModel):
     consecutive_failures: int
     last_scraped_at: datetime | None
     created_at: datetime
+    latest_price: Decimal | None = None
 
 
 class ProductCreate(BaseModel):
