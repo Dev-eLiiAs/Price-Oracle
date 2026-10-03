@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import AddOfferForm from "@/components/AddOfferForm";
+import PriceAlert from "@/components/PriceAlert";
 import PriceChart from "@/components/PriceChart";
 import RecommendationBadge from "@/components/RecommendationBadge";
 import {
@@ -55,9 +56,25 @@ export default function ProductDetailPage() {
     window.location.href = "/";
   }
 
-  if (loading) return <main><p className="loading-state">Cargando...</p></main>;
+  if (loading) {
+    return (
+      <main>
+        <p className="loading-state">
+          <span className="spinner" aria-hidden="true" /> Cargando…
+        </p>
+      </main>
+    );
+  }
   if (error) return <main><p className="error">{error}</p></main>;
   if (!product) return null;
+
+  const pricedOffers = product.offers.filter((o) => o.latest_price !== null);
+  const cheapestOfferId =
+    pricedOffers.length > 1
+      ? pricedOffers.reduce((min, o) =>
+          parseFloat(o.latest_price!) < parseFloat(min.latest_price!) ? o : min
+        ).id
+      : null;
 
   return (
     <main>
@@ -84,18 +101,31 @@ export default function ProductDetailPage() {
 
       {recommendation && <RecommendationBadge recommendation={recommendation} />}
 
+      <PriceAlert productId={product.id} />
+
       <section>
         <h2>Histórico de precios</h2>
-        <div className="chart-card">
-          <PriceChart history={history} />
+        <div className="card chart-card">
+          <PriceChart history={history} offers={product.offers} />
         </div>
       </section>
 
       <section>
         <h2>Ofertas trackeadas</h2>
-        <div className="offers-list">
+        <div className="card offers-list">
           {product.offers.map((offer) => (
-            <div key={offer.id} className="offer-row">
+            <div
+              key={offer.id}
+              className={`offer-row${offer.id === cheapestOfferId ? " offer-row--cheapest" : ""}`}
+            >
+              {offer.latest_price ? (
+                <span className="offer-row__price">{offer.latest_price} €</span>
+              ) : (
+                <span className="offer-row__price offer-row__price--empty">Sin precio</span>
+              )}
+              {offer.id === cheapestOfferId && (
+                <span className="offer-row__best-badge">Más barato</span>
+              )}
               <span className="offer-row__retailer">{offer.retailer}</span>
               <span className={`status-badge status-badge--${offer.status}`}>
                 {offer.status}
@@ -115,7 +145,9 @@ export default function ProductDetailPage() {
 
       <section>
         <h2>Añadir oferta de otra tienda</h2>
-        <AddOfferForm productId={product.id} onSuccess={load} />
+        <div className="card">
+          <AddOfferForm productId={product.id} onSuccess={load} existingProducts={[product]} />
+        </div>
       </section>
     </main>
   );

@@ -12,6 +12,7 @@ export interface Offer {
   consecutive_failures: number;
   last_scraped_at: string | null;
   created_at: string;
+  latest_price: string | null;
 }
 
 export interface Product {
@@ -33,6 +34,15 @@ export interface PricePoint {
   scraped_at: string;
 }
 
+export class DuplicateOfferApiError extends Error {
+  productId: string;
+  constructor(message: string, productId: string) {
+    super(message);
+    this.name = "DuplicateOfferApiError";
+    this.productId = productId;
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -41,7 +51,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail ?? `Request failed with status ${res.status}`);
+    if (res.status === 409 && body.detail?.product_id) {
+      throw new DuplicateOfferApiError(body.detail.message, body.detail.product_id);
+    }
+    const detail = typeof body.detail === "string" ? body.detail : undefined;
+    throw new Error(detail ?? `Request failed with status ${res.status}`);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -81,4 +95,33 @@ export function createProductFromUrl(url: string, productId?: string): Promise<P
 
 export function deleteProduct(id: string): Promise<void> {
   return request(`/api/v1/products/${id}`, { method: "DELETE" });
+}
+
+export interface Alert {
+  id: string;
+  user_id: string;
+  product_id: string;
+  threshold_price: string | null;
+  threshold_type: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export function listAlerts(productId: string): Promise<Alert[]> {
+  return request(`/api/v1/alerts?product_id=${productId}`);
+}
+
+export function createAlert(productId: string, thresholdPrice: string): Promise<Alert> {
+  return request("/api/v1/alerts", {
+    method: "POST",
+    body: JSON.stringify({
+      product_id: productId,
+      threshold_price: thresholdPrice,
+      threshold_type: "fixed_price",
+    }),
+  });
+}
+
+export function deleteAlert(id: string): Promise<void> {
+  return request(`/api/v1/alerts/${id}`, { method: "DELETE" });
 }

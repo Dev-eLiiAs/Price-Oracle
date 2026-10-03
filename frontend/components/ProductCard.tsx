@@ -3,9 +3,19 @@
 import Link from "next/link";
 import type { Product } from "@/lib/api";
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({
+  product,
+  index = 0,
+}: {
+  product: Product;
+  index?: number;
+}) {
   return (
-    <Link href={`/products/${product.id}`} className="product-card">
+    <Link
+      href={`/products/${product.id}`}
+      className="product-card"
+      style={{ animationDelay: `${Math.min(index, 8) * 90}ms` }}
+    >
       <div className="product-card__image">
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element

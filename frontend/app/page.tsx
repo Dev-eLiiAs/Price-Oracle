@@ -29,28 +29,41 @@ export default function Home() {
   return (
     <main>
       <div className="page-header">
-        <div>
-          <h1>Price Oracle</h1>
-          <p className="subtitle">Tu lista de deseos con seguimiento de precios.</p>
+        <div className="brand">
+          <span className="brand__mark">P</span>
+          <div>
+            <h1>Price Oracle</h1>
+            <p className="subtitle">Tu lista de deseos con seguimiento de precios.</p>
+          </div>
         </div>
       </div>
 
-      <AddOfferForm onSuccess={load} />
+      <div className="hero-card">
+        <AddOfferForm onSuccess={load} existingProducts={products} />
+      </div>
 
-      {loading && <p className="loading-state">Cargando productos...</p>}
+      {loading && (
+        <div className="product-grid" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="product-card product-card--skeleton" />
+          ))}
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
       {!loading && !error && products.length === 0 && (
         <div className="empty-state">
           <p>Todavía no tienes productos guardados.</p>
-          <p>Pega la URL de un producto de Amazon o PcComponentes arriba para empezar.</p>
+          <p>Pega arriba el enlace de un producto de Amazon o PcComponentes para empezar.</p>
         </div>
       )}
 
-      <div className="product-grid">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {!loading && (
+        <div className="product-grid">
+          {products.map((product, i) => (
+            <ProductCard key={product.id} product={product} index={i} />
+          ))}
+        </div>
+      )}
     </main>
   );
 }
